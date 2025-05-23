@@ -9,29 +9,45 @@ from scipy.interpolate import interp1d
 def read_performance(path):
     """
     Liest die Leistungskurve aus einer Excel-Datei ein.
-    Erwartete Sheets:
-      - 'Wind_vs_Power': Spalten ['v', 'P']
-      - 'Omega_vs_Power': Spalten ['omega', 'P']
+    Erwartete Spalten:
+      - 'Windgeschwindigkeit (mph)': Windgeschwindigkeit in mph
+      - 'Leistung': Elektrische Leistung der Air30
+    
+    Die Omega_vs_Power Daten werden aus der Funktion generiert:
+    P = 17.192 * omega - 182.54
+    
     Gibt zurück:
       - df_v: DataFrame mit Windgeschwindigkeit vs. Leistung
       - v_opt: Windgeschwindigkeit am Leistung Maximum (v_{C_p,max})
       - P_opt: Maximale Leistung
       - omega_opt: Drehzahl bei P_opt
-    Bezug: Masterarbeit Kap. 3.6 (Bestimmung v_{C_p,max})
     """
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Performance-Datei nicht gefunden: {path}")
-    df_v  = pd.read_excel(path, sheet_name='Wind_vs_Power')
-    df_om = pd.read_excel(path, sheet_name='Omega_vs_Power')
-    df_v.columns  = ['v', 'P']
-    df_om.columns = ['omega', 'P']
-    # Bestimmung des Maximums
-    idx     = df_v['P'].idxmax()
-    v_opt   = df_v.at[idx, 'v']
-    P_opt   = df_v.at[idx, 'P']
-    # Interpolation, um omega bei P_opt zu finden
-    f_omega = interp1d(df_om['P'], df_om['omega'], fill_value="extrapolate")
+    
+    # Lese Wind vs. Power Daten
+    df_v = pd.read_excel(path)
+    # Konvertiere mph in m/s (1 mph = 0.44704 m/s)
+    df_v['v'] = df_v['Windgeschwindigkeit (mph)'] * 0.44704
+    df_v['P'] = df_v['Leistung']
+    
+    # Generiere Omega vs. Power Daten aus der Funktion
+    omega_range = np.linspace(10, 30, 100)  # Drehzahlbereich in 1/s
+    P_omega = 17.192 * omega_range - 182.54
+    df_om = pd.DataFrame({
+        'omega': omega_range,
+        'P': P_omega
+    })
+    
+    # Bestimmung des Leistungsmaximums
+    idx = df_v['P'].idxmax()
+    v_opt = df_v.at[idx, 'v']
+    P_opt = df_v.at[idx, 'P']
+    
+    # Interpolation für die zugehörige Drehzahl
+    f_omega = interp1d(df_om['P'], df_om['omega'], fill_value='extrapolate')
     omega_opt = float(f_omega(P_opt))
+    
     return df_v, v_opt, P_opt, omega_opt
 
 def read_polars(airfoil_dir):
