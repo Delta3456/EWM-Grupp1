@@ -1,0 +1,20 @@
+performance_file: "data/Leistungskurve_data.xlsx"
+step_file: "data/Air30_Blade.stp"
+airfoil_dir: "data/AirFoil_datenbank/"
+output_dir: "results/"
+
+# Turbinen-Grundparameter
+R: 50.0            # Rotorradius in Metern
+Z: 3               # Blattanzahl
+rho: 1.225         # Luftdichte in kg/m^3
+Omega_min: 0.5     # Minimale Drehzahl in rad/s
+Omega_max: 2.0     # Maximale Drehzahl in rad/s
+
+# Design-Ziele & Grenzen
+v_target_factor: 1.2    # Faktor für Zielwindgeschwindigkeit (+20 %)
+chord_delta: 0.2        # Max. relative Änderung der Sehne c(r) ±20 %
+twist_delta: 3          # Max. Twist-Änderung in Grad ±3 °
+
+# Airfoil-Filterkriterien
+t_c_range: [0.15, 0.25]  # Zulässige t/c-Werte (15–25 %)
+Re_range: [1e5, 1e7]     # Zulässiger Reynolds-Zahlenbereich
