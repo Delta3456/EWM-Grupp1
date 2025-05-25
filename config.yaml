@@ -1,35 +1,47 @@
+# --- Vordefinierte Parameter für alle Module ---
 preprocessing:
+  # Pfad zur Excel-Datei mit Rohdaten der Leistungskurve
   performance_curve: "data/Leistungskurve_data.xlsx"
-  smoothing_window: 5
-  interpolation_points: 500
+  # Fenstergröße für die gleitende Mittelwert-Glättung (Anzahl Punkte)
+  smoothing_window: 5         # Tipp: Erhöhen verbessert die Glättung auf Kosten von Detailverlust
+  # Anzahl der Stützpunkte für Spline-Interpolation des geglätteten Profils
+  interpolation_points: 500   # Empfehlung: mind. 100 für kontinuierliche Kurve
 
 generator:
-  a: 17.192       # Kennlinienparameter
-  b: -182.54
+  # Parameter a und b der vereinfachten Kennlinie P(λ) = a·λ + b
+  a: 17.192       # Steigung der Leistungskennlinie (W per TSR)
+  b: 182.54       # Offset der Kennlinie (W)
 
 tsr_scan:
-  lambda_min:  6.0
-  lambda_max:  8.0
-  lambda_step: 0.25
-  R:           0.5       # m
-  rho:         1.225     # kg/m³
+  # Grenzwerte und Schrittweite für TSR-Scan
+  lambda_min:  6.0           # Untere Schranke des TSR-Bereichs
+  lambda_max:  8.0           # Obere Schranke des TSR-Bereichs
+  lambda_step: 0.25          # Schrittweite (Auflösung) des Scans
+  # Turbinenparameter (fest, da Durchmesser gegeben)
+  R:           0.5           # Rotorradius in Metern (Schaufellänge fixiert)
+  rho:         1.225         # Luftdichte in kg/m³ bei Standardbedingungen
 
 bem:
-  r_min:        0.5     # m
-  r_max:        0.6      # m
-  N_segments:   30
-  tol_induction: 1e-4
-  B:            3        # Blattzahl
+  # Geometrische und numerische Einstellungen für BEM
+  r_min:        0.05        # Innerer Radius des ersten Segments in m (Nabe)
+  r_max:        0.5         # Außenradius = Schaufellänge in m (fest)
+  N_segments:   30          # Anzahl der radialsymmetrischen Segmente
+  tol_induction:1e-4        # Toleranz für Konvergenz der Induktionsfaktoren
+  B:            3           # Anzahl der Rotorblätter
 
 profile_selection:
-  mu_air:       1.8e-5    # Pa·s
+  # Physikalische Konstanten für Profilpolar-Berechnungen
+  mu_air:       1.8e-5      # Dynamische Viskosität der Luft in Pa·s
+  # Gewichtung der Scorkriterien: L/D und maximaler Auftriebsbeiwert
   score_weights:
-    ld:     0.7
-    clmax:  0.3
-  profile_folder: "data/AirFoil_datenbank"
+    ld:     0.7            # Gewicht für Auftriebswiderstandsverhältnis
+    clmax:  0.3            # Gewicht für maximalen Auftriebsbeiwert
+  # Verzeichnis mit .dat-Dateien für Selig/Lednicer-Profile
+  profile_folder: "profiles/"
 
 output:
-  design_params: "results/design_params.json"
-  tsr_scan:      "results/tsr_scan.json"
-  bem:           "results/bem_results.json"
-  profiles:      "results/profile_map.json"
+  # Ausgabepfade für JSON-Ergebnisse
+  design_params: "results/design_params.json"   # Vorverarbeitungs-Ergebnisse
+  tsr_scan:      "results/tsr_scan.json"       # Ergebnisse des TSR-Scans
+  bem:           "results/bem_results.json"    # BEM-Berechnungsergebnisse
+  profiles:      "results/profile_map.json"    # Zuordnung Segment→Profil
