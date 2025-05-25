@@ -127,7 +127,12 @@ def smooth_and_interpolate(
         raise ValueError("Fenstergröße muss mindestens 1 sein")
     if n_points < 2:
         raise ValueError("Mindestens 2 Interpolationspunkte erforderlich")
-        
+
+    # → Damit v_mph und P auch Python-Listen akzeptieren,
+    # zuerst in NumPy-Arrays konvertieren:
+    v_mph = np.asarray(v_mph)
+    P = np.asarray(P)
+
     # Umrechnung in m/s
     v = v_mph * MPH_TO_MS
     

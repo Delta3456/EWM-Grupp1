@@ -26,7 +26,7 @@ bem:
   r_min:        0.05        # Innerer Radius des ersten Segments in m (Nabe)
   r_max:        0.5         # Außenradius = Schaufellänge in m (fest)
   N_segments:   30          # Anzahl der radialsymmetrischen Segmente
-  tol_induction:1e-4        # Toleranz für Konvergenz der Induktionsfaktoren
+  tol_induction: 1e-4        # Toleranz für Konvergenz der Induktionsfaktoren
   B:            3           # Anzahl der Rotorblätter
 
 profile_selection:

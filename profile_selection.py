@@ -39,34 +39,37 @@ def select_profiles(bem_res, cfg):
     weights = cfg['profile_selection']['score_weights']
     folder = cfg['profile_selection']['profile_folder']
     r = bem_res['r']
-    # Hier Map Segment->Profil
+    # Alle .dat-Dateien im Ordner sammeln
+    dat_files = [f for f in os.listdir(folder) if f.endswith('.dat')]
+    # Falls keine Profile da sind, leeres Mapping zurückgeben
+    if not dat_files:
+        return {}
+
     profile_map = {}
 
     for i, ri in enumerate(r):
         # Re-Zahl für Segment
-        w1 = bem_res['dF_S'][i]  # Platzhalter, eigentlich Geschwindigkeit
-        s_opt = 1.0               # Siehe BEM-Modul
-        Re_i = cfg['tsr_scan']['rho'] * w1 * s_opt / mu
+        w1   = bem_res['dF_S'][i]  # Platzhalter, eigentlich Geschwindigkeit
+        s_opt = 1.0                # Siehe BEM-Modul
+        Re_i  = cfg['tsr_scan']['rho'] * w1 * s_opt / mu
 
-        # Lade alle Profile
         scores = {}
-        for dat in os.listdir(folder):
-            if dat.endswith('.dat'):
-                data = parse_dat(os.path.join(folder, dat))
-                # Interpolation L/D und Cl_max
-                ld = 100  # Dummy
-                clmax = data['Cl_max']
-                # Normieren
-                # Hier: X_norm = (X - min) / (max - min)
-                # Dummy: ld_norm=1, clnorm=1
-                ld_norm = 1.0
-                cl_norm = 1.0
-                # Score
-                S = weights['ld'] * ld_norm + weights['clmax'] * cl_norm
-                scores[dat] = S
-        # bestes Profil
+        for dat in dat_files:
+            data = parse_dat(os.path.join(folder, dat))
+            # Interpolation L/D und Cl_max
+            ld    = 100            # Dummy
+            clmax = data['Cl_max']
+            # Normieren
+            # Hier: X_norm = (X - min) / (max - min)
+            # Dummy: ld_norm=1, cl_norm=1
+            ld_norm = 1.0
+            cl_norm = 1.0
+            # Score
+            S = weights['ld'] * ld_norm + weights['clmax'] * cl_norm
+            scores[dat] = S
+
         best = max(scores, key=scores.get)
-        profile_map[str(i)] = best
+        profile_map[i] = best
 
     return profile_map
 

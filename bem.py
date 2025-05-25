@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
-tsr_scan.py
+bem.py
 
-Modul 2: Sweep über den Tip Speed Ratio (TSR)-Bereich
-  - Liest Design-Parameter aus Modul 1
-  - Durchläuft λ ∈ [lambda_min, lambda_max] in Schritten lambda_step
-  - Berechnet vereinfachten Leistungsbeiwert c_P(λ)
-  - Findet λ_opt mit maximalem c_P
-  - Aktualisiert omega_design auf Basis von λ_opt
-  - Speichert Scan-Ergebnisse in tsr_scan.json
+Modul 3: Blade Element Momentum (BEM) ohne Prandtl-Korrekturen
+  - Berechnet axiale und tangentiale Induktionsfaktoren
+  - Bestimmt lokale Anströmung, Kräfte und Momentbeiträge
+  - Nutzt Kontinuitäts- und Impulserhaltung
+  - Summiert Leistung und berechnet c_P
 """
 import argparse
 import logging
@@ -17,94 +15,117 @@ import yaml
 import numpy as np
 import sys
 
+# Kappa: rad/s für Drehzahl
 
 def load_config(path):
-    """Lädt die YAML-Konfigurationsdatei."""
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
+def load_inputs(design_path, tsr_path):
+    with open(design_path) as f:
+        design = json.load(f)
+    with open(tsr_path) as f:
+        tsr = json.load(f)
+    return design, tsr
 
-def load_design(path):
-    """Lädt design_params.json aus Modul 1."""
-    with open(path, 'r') as f:
-        return json.load(f)
 
-
-def tsr_scan(design, tsr_cfg):
-    """
-    Führt den TSR-Scan durch:
-      P(λ) approximiert durch lineares Modell P = a·λ + b
-      c_P(λ) = P(λ) / (0.5·ρ·π·R²·v_design³)
-    Return: dict mit allen λ, zugehörigen c_P, λ_opt und neuer omega_design
-    """
-    # Auslegungsgeschwindigkeit und Luftdichte
-    v = design['v_design']
+def bem(design, tsr_cfg, bem_cfg):
+    # Geometrische Daten
+    R = tsr_cfg['R']
+    r_min = bem_cfg['r_min']
+    r_max = bem_cfg['r_max']
+    N = bem_cfg['N_segments']
+    B = bem_cfg['B']  # Blattzahl
     rho = tsr_cfg['rho']
-    R = tsr_cfg['R']                    # Fester Rotorradius
+    v = design['v_design']
+    omega = tsr_cfg['omega_design']
 
-    # Aufbau des λ-Vektors
-    lambdas = np.arange(
-        tsr_cfg['lambda_min'],
-        tsr_cfg['lambda_max'] + 1e-8,
-        tsr_cfg['lambda_step']
-    )
-    # Parameter der linearen Leistungskennlinie
-    a = tsr_cfg.get('a', design.get('a_gen', None)) or design['a_gen']
-    b = tsr_cfg.get('b', design.get('b_gen', None)) or design['b_gen']
+    # Radiales diskretes Gitter
+    r = np.linspace(r_min, r_max, N)
+    dr = r[1] - r[0]
 
-    c_p = []
-    # Kalkuliere c_P für jeden λ
-    for lam in lambdas:
-        P_l = a * lam + b                # Vereinfachte P(λ)
-        cp = P_l / (0.5 * rho * np.pi * R**2 * v**3)
-        c_p.append(cp)
-    c_p = np.array(c_p)
+    # Speicherung
+    dM = np.zeros_like(r)
+    dF_S = np.zeros_like(r)
 
-    # Optimum finden
-    idx_opt = np.argmax(c_p)
-    lam_opt = float(lambdas[idx_opt])
+    # Induktionsfaktoren initialisieren
+    a = np.zeros_like(r)
+    aprime = np.zeros_like(r)
 
-    # Neue Drehzahl basierend auf λ_opt
-    omega_new = lam_opt * v / R
+    for i, ri in enumerate(r):
+        # Anfangsschätzung
+        a_i = 0.3
+        apr_i = 0.0
+        for _ in range(100):
+            # Geschwindigkeitsteil c1
+            c1 = v * (1 - a_i)
+            # Umfangsgeschwindigkeit u1
+            u1 = omega * ri * (1 + apr_i)
+            # Resultierende Geschwindigkeit
+            w1 = np.hypot(c1, u1)
+            # Anströmwinkel phi
+            phi = np.arctan2(c1, u1)
+            # Geometrie: Profilsehnenlänge (Nähe Betz)
+            s_opt = (16/9 * np.pi * R *  # siehe Formel
+                     bem_cfg.get('C_l_ref', 1.0) /  # Referenz C_l (~1)
+                     (B * tsr_cfg['lambda_opt']) *
+                     np.sqrt((tsr_cfg['lambda_opt']*R/ri)**2 + 4/9))
+            # Re-Zahl
+            Re = rho * w1 * s_opt / bem_cfg.get('mu_air', 1.8e-5)
+            # Profilpolare laden / interpolieren → C_l, C_d
+            # (Hier Annahme: C_l = 1.0, C_d = 0.01 als Platzhalter)
+            C_l = 1.0
+            C_d = 0.01
+            # Blattkr&auml;fte
+            dM_i = 0.5 * rho * w1**2 * s_opt * B * (C_l*np.sin(phi) - C_d*np.cos(phi)) * ri * dr
+            dF_S_i = 0.5 * rho * w1**2 * s_opt * B * (C_l*np.cos(phi) + C_d*np.sin(phi)) * dr
+            # Berechne Induktionsfaktoren neu (Momentum-Theorie)
+            a_new = dF_S_i / (4*np.pi * ri * rho * v**2 * (1 - a_i))
+            apr_new = dM_i / (4*np.pi * ri**3 * rho * v * omega * (1 - a_i))
+            if abs(a_new - a_i) < bem_cfg['tol_induction'] and abs(apr_new - apr_i) < bem_cfg['tol_induction']:
+                break
+            a_i, apr_i = a_new, apr_new
+        # speichern
+        a[i], aprime[i] = a_i, apr_i
+        dM[i], dF_S[i] = dM_i, dF_S_i
+
+    # Gesamtmoment
+    M = np.sum(dM)
+    # Leistung
+    P = M * omega
+    # Leistungsbeiwert
+    c_P = P / (0.5 * rho * np.pi * R**2 * v**3)
 
     return {
-        'lambdas': lambdas.tolist(),
-        'c_p': c_p.tolist(),
-        'lambda_opt': lam_opt,
-        'omega_design': float(omega_new)
+        'r': r.tolist(),
+        'a': a.tolist(),
+        'aprime': aprime.tolist(),
+        'dM': dM.tolist(),
+        'dF_S': dF_S.tolist(),
+        'M_total': float(M),
+        'P': float(P),
+        'c_P': float(c_P)
     }
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='TSR-Scan zur Optimierung des Leistungsbeiwerts'
-    )
+    parser = argparse.ArgumentParser(description='BEM-Berechnung')
     parser.add_argument('--config', required=True, help='Pfad zu config.yaml')
-    parser.add_argument('--design', required=True, help='Pfad zu design_params.json')
+    parser.add_argument('--design', required=True, help='Design-Params JSON')
+    parser.add_argument('--tsr', required=True, help='TSR-Scan JSON')
     args = parser.parse_args()
 
-    # Logging initialisieren
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(levelname)s: %(message)s'
-    )
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     try:
         cfg = load_config(args.config)
-        tsr_cfg = cfg['tsr_scan']
-        design = load_design(args.design)
-
-        # TSR-Scan durchführen
-        result = tsr_scan(design, tsr_cfg)
-        logging.info('λ_optimal = %.3f', result['lambda_opt'])
-
-        # Ergebnisse speichern
-        out_path = cfg['output']['tsr_scan']
-        with open(out_path, 'w') as f:
-            json.dump(result, f, indent=2)
-        logging.info('TSR-Scan-Ergebnisse gespeichert in %s', out_path)
-
+        design, tsr = load_inputs(args.design, args.tsr)
+        res = bem(design, tsr, cfg['bem'])
+        out = cfg['output']['bem']
+        with open(out, 'w') as f:
+            json.dump(res, f, indent=2)
+        logging.info('BEM-Ergebnisse gespeichert in %s', out)
     except Exception as e:
-        logging.error('Fehler in tsr_scan: %s', e)
+        logging.error('Fehler in bem.py: %s', e)
         sys.exit(1)
 
 if __name__ == '__main__':
