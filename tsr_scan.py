@@ -71,7 +71,9 @@ def tsr_scan(design, tsr_cfg):
         'lambdas': lambdas.tolist(),
         'c_p': c_p.tolist(),
         'lambda_opt': lam_opt,
-        'omega_design': float(omega_new)
+        'omega_design': float(omega_new),
+        'R': float(R),           # Include rotor radius
+        'rho': float(rho)        # Include air density
     }
 
 

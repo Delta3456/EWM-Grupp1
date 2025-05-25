@@ -187,7 +187,9 @@ def compute_design_params(
         'v_peak': float(v_peak),
         'P_peak': float(P_peak),
         'v_design': float(v_design),
-        'omega_design': float(omega_design)
+        'omega_design': float(omega_design),
+        'a_gen': float(a),
+        'b_gen': float(b)
     }
 
 def main() -> None:
@@ -200,46 +202,37 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Logging-Konfiguration
+    # Logging initialisieren
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s: %(message)s'
+        format='%(levelname)s: %(message)s'
     )
 
     try:
         # Konfiguration laden
         cfg = load_config(args.config)
-        pre = cfg['preprocessing']
-        gen = cfg['generator']
+        pre_cfg = cfg['preprocessing']
+        gen_cfg = cfg['generator']  # Get generator parameters
 
-        # Rohdaten einlesen
-        v_mph, P = read_curve(pre['performance_curve'])
-        logging.info('Eingelesene Punkte: %d', len(v_mph))
+        # Leistungskurve einlesen
+        v_mph, P = read_curve(pre_cfg['performance_curve'])
 
-        # Glätten und Interpolieren
-        v, P_new = smooth_and_interpolate(
+        # Glätten und interpolieren
+        v, P = smooth_and_interpolate(
             v_mph, P,
-            pre['smoothing_window'],
-            pre['interpolation_points']
-        )
-        logging.info(
-            'Daten geglättet (Fenster=%d) und interpoliert auf %d Punkte',
-            pre['smoothing_window'], pre['interpolation_points']
+            pre_cfg['smoothing_window'],
+            pre_cfg['interpolation_points']
         )
 
         # Auslegungsparameter berechnen
         design = compute_design_params(
-            v, P_new,
-            gen['a'], gen['b']
-        )
-        logging.info(
-            'v_design=%.3f m/s, omega_design=%.3f rad/s',
-            design['v_design'], design['omega_design']
+            v, P,
+            gen_cfg['a'],  # Pass generator parameter a
+            gen_cfg['b']   # Pass generator parameter b
         )
 
         # Ergebnisse speichern
-        out_path = Path(cfg['output']['design_params'])
-        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path = cfg['output']['design_params']
         with open(out_path, 'w') as f:
             json.dump(design, f, indent=2)
         logging.info('Design-Parameter gespeichert in %s', out_path)

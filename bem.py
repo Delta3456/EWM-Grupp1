@@ -28,17 +28,24 @@ def load_inputs(design_path, tsr_path):
         tsr = json.load(f)
     return design, tsr
 
+def ensure_float(value, name):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"Expected float for {name}, got {type(value)}")
 
 def bem(design, tsr_cfg, bem_cfg):
     # Geometrische Daten
-    R = tsr_cfg['R']
-    r_min = bem_cfg['r_min']
-    r_max = bem_cfg['r_max']
-    N = bem_cfg['N_segments']
-    B = bem_cfg['B']  # Blattzahl
-    rho = tsr_cfg['rho']
-    v = design['v_design']
-    omega = tsr_cfg['omega_design']
+    R = ensure_float(tsr_cfg['R'], 'R')
+    r_min = ensure_float(bem_cfg['r_min'], 'r_min')
+    r_max = ensure_float(bem_cfg['r_max'], 'r_max')
+    N = int(bem_cfg['N_segments'])
+    B = int(bem_cfg['B'])  # Blattzahl
+    rho = ensure_float(tsr_cfg['rho'], 'rho')
+    v = ensure_float(design['v_design'], 'v_design')
+    omega = ensure_float(tsr_cfg['omega_design'], 'omega_design')
+    tsr_lambda_opt = ensure_float(tsr_cfg['lambda_opt'], 'lambda_opt')
+    tol_induction = ensure_float(bem_cfg['tol_induction'], 'tol_induction')
 
     # Radiales diskretes Gitter
     r = np.linspace(r_min, r_max, N)
@@ -67,22 +74,22 @@ def bem(design, tsr_cfg, bem_cfg):
             phi = np.arctan2(c1, u1)
             # Geometrie: Profilsehnenlänge (Nähe Betz)
             s_opt = (16/9 * np.pi * R *  # siehe Formel
-                     bem_cfg.get('C_l_ref', 1.0) /  # Referenz C_l (~1)
-                     (B * tsr_cfg['lambda_opt']) *
-                     np.sqrt((tsr_cfg['lambda_opt']*R/ri)**2 + 4/9))
+                     float(bem_cfg.get('C_l_ref', 1.0)) /  # Referenz C_l (~1)
+                     (B * tsr_lambda_opt) *
+                     np.sqrt((tsr_lambda_opt*R/ri)**2 + 4/9))
             # Re-Zahl
-            Re = rho * w1 * s_opt / bem_cfg.get('mu_air', 1.8e-5)
+            Re = rho * w1 * s_opt / float(bem_cfg.get('mu_air', 1.8e-5))
             # Profilpolare laden / interpolieren → C_l, C_d
             # (Hier Annahme: C_l = 1.0, C_d = 0.01 als Platzhalter)
             C_l = 1.0
             C_d = 0.01
-            # Blattkr&auml;fte
+            # Blattkräfte
             dM_i = 0.5 * rho * w1**2 * s_opt * B * (C_l*np.sin(phi) - C_d*np.cos(phi)) * ri * dr
             dF_S_i = 0.5 * rho * w1**2 * s_opt * B * (C_l*np.cos(phi) + C_d*np.sin(phi)) * dr
             # Berechne Induktionsfaktoren neu (Momentum-Theorie)
             a_new = dF_S_i / (4*np.pi * ri * rho * v**2 * (1 - a_i))
             apr_new = dM_i / (4*np.pi * ri**3 * rho * v * omega * (1 - a_i))
-            if abs(a_new - a_i) < bem_cfg['tol_induction'] and abs(apr_new - apr_i) < bem_cfg['tol_induction']:
+            if abs(a_new - a_i) < tol_induction and abs(apr_new - apr_i) < tol_induction:
                 break
             a_i, apr_i = a_new, apr_new
         # speichern

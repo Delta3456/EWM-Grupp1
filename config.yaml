@@ -37,7 +37,7 @@ profile_selection:
     ld:     0.7            # Gewicht für Auftriebswiderstandsverhältnis
     clmax:  0.3            # Gewicht für maximalen Auftriebsbeiwert
   # Verzeichnis mit .dat-Dateien für Selig/Lednicer-Profile
-  profile_folder: "profiles/"
+  profile_folder: "data/Airfoil_Datenbank/"
 
 output:
   # Ausgabepfade für JSON-Ergebnisse
