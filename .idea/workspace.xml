@@ -4,15 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="03a17e27-da94-4e9c-b250-3ce82ee26725" name="Changes" comment="Inuput funktioniert und Geometrie einlesen">
+    <list default="true" id="03a17e27-da94-4e9c-b250-3ce82ee26725" name="Changes" comment="Neuer Comit + Neue">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/airfoil_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/airfoil_screen.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_io.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_io.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/geometry.py" beforeDir="false" afterPath="$PROJECT_DIR$/geometry.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/optimize.py" beforeDir="false" afterPath="$PROJECT_DIR$/optimize.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,7 +29,7 @@
   &quot;associatedIndex&quot;: 2
 }</component>
   <component name="ProjectId" id="2xUcKtz0hjbK78DUVxhKuAofKix" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+  <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectViewState">
@@ -56,15 +49,15 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-PY-243.26053.29" />
-        <option value="bundled-python-sdk-b1dbf8ef85a6-4df51de95216-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.26053.29" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-PY-251.25410.159" />
+        <option value="bundled-python-sdk-e0ed3721d81e-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.25410.159" />
       </set>
     </attachedChunks>
   </component>
@@ -80,7 +73,8 @@
       <workItem from="1748010481876" duration="2755000" />
       <workItem from="1748013393030" duration="4837000" />
       <workItem from="1748041349720" duration="398000" />
-      <workItem from="1748190700669" duration="328000" />
+      <workItem from="1748190700669" duration="652000" />
+      <workItem from="1748191423681" duration="29000" />
     </task>
     <task id="LOCAL-00001" summary="erste version">
       <option name="closed" value="true" />
@@ -98,7 +92,15 @@
       <option name="project" value="LOCAL" />
       <updated>1748037977907</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Neuer Comit + Neue">
+      <option name="closed" value="true" />
+      <created>1748191227285</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1748191227285</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -107,7 +109,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="erste version" />
     <MESSAGE value="Inuput funktioniert und Geometrie einlesen" />
-    <option name="LAST_COMMIT_MESSAGE" value="Inuput funktioniert und Geometrie einlesen" />
+    <MESSAGE value="Neuer Comit + Neue" />
+    <option name="LAST_COMMIT_MESSAGE" value="Neuer Comit + Neue" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EWM_Grupp1$main.coverage" NAME="main Coverage Results" MODIFIED="1748041670803" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
