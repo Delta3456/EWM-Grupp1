@@ -1,20 +1,35 @@
-performance_file: "data/Leistungskurve_data.xlsx"
-coords_file: "data/Air30_Test.txt"
-airfoil_dir: "data/AirFoil_datenbank/"
-output_dir: "results/"
+preprocessing:
+  performance_curve: "data/Leistungskurve_data.xlsx"
+  smoothing_window: 5
+  interpolation_points: 500
 
-# Turbinen-Grundparameter
-R: 50.0            # Rotorradius in Metern
-Z: 3               # Blattanzahl
-rho: 1.225         # Luftdichte in kg/m^3
-Omega_min: 0.5     # Minimale Drehzahl in rad/s
-Omega_max: 2.0     # Maximale Drehzahl in rad/s
+generator:
+  a: 17.192       # Kennlinienparameter
+  b: -182.54
 
-# Design-Ziele & Grenzen
-v_target_factor: 1.2    # Faktor für Zielwindgeschwindigkeit (+20 %)
-chord_delta: 0.2        # Max. relative Änderung der Sehne c(r) ±20 %
-twist_delta: 3          # Max. Twist-Änderung in Grad ±3 °
+tsr_scan:
+  lambda_min:  6.0
+  lambda_max:  8.0
+  lambda_step: 0.25
+  R:           0.5       # m
+  rho:         1.225     # kg/m³
 
-# Airfoil-Filterkriterien
-t_c_range: [0.15, 0.25]  # Zulässige t/c-Werte (15–25 %)
-Re_range: [1e5, 1e7]     # Zulässiger Reynolds-Zahlenbereich
+bem:
+  r_min:        0.5     # m
+  r_max:        0.6      # m
+  N_segments:   30
+  tol_induction: 1e-4
+  B:            3        # Blattzahl
+
+profile_selection:
+  mu_air:       1.8e-5    # Pa·s
+  score_weights:
+    ld:     0.7
+    clmax:  0.3
+  profile_folder: "data/AirFoil_datenbank"
+
+output:
+  design_params: "results/design_params.json"
+  tsr_scan:      "results/tsr_scan.json"
+  bem:           "results/bem_results.json"
+  profiles:      "results/profile_map.json"
