@@ -73,13 +73,22 @@ class BladeElementMomentum:
             Cl = self.polars['cl_fun'](np.rad2deg(alpha))  # in Funktionsaufruf Grad!
             Cd = self.polars['cd_fun'](np.rad2deg(alpha))
             # Blattbeladung σ = (Z * c) / (2πr)
-            sigma = self.Z * self.c / (2 * np.pi * self.r)
+            sigma = self.Z * self.c / (2 * np.pi * np.maximum(self.r, 1e-10))
             # Aktualisierung a und a'
             # Klassische Gleichungen aus Kap. 3.6 Derivation
             # a_new = 1 / ( (4 sin^2β) / (σ Cl cosβ) + 1 )
             # a_p_new = 1 / ( (4 sinβ cosβ) / (σ Cl sinβ) - 1 )
-            a_new   = 1 / ( (4 * np.sin(beta)**2) / (sigma * Cl * np.cos(beta)) + 1 )
-            a_p_new = 1 / ( (4 * np.sin(beta) * np.cos(beta)) / (sigma * Cl * np.sin(beta)) - 1 )
+            denominator_a = (4 * np.sin(beta)**2) / (sigma * Cl * np.cos(beta)) + 1
+            denominator_a_p = (4 * np.sin(beta) * np.cos(beta)) / (sigma * Cl * np.sin(beta)) - 1
+            
+            # Sicherheitsüberprüfung für Divisionen
+            a_new = np.where(np.abs(denominator_a) > 1e-10,
+                           1 / denominator_a,
+                           np.full_like(denominator_a, 1/3))  # Fallback auf Betz-Wert
+                           
+            a_p_new = np.where(np.abs(denominator_a_p) > 1e-10,
+                             1 / denominator_a_p,
+                             np.zeros_like(denominator_a_p))  # Fallback auf 0
             # Relaxation / Konvergenz
             if np.max(np.abs(a_new - a)) < tol and np.max(np.abs(a_p_new - a_p)) < tol:
                 a, a_p = a_new, a_p_new

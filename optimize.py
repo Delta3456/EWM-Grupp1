@@ -63,11 +63,17 @@ def objective(p, bem, v_target, Cp_orig, Omega, weight):
     v_opt_new = v_range[idx_opt]
     Cp_new    = Cp[idx_opt]
 
-    # Strafe für Cp-Verlust
-    penalty = max(0.0, Cp_orig - Cp_new)
+    # Strafe für Cp-Verlust (quadratische Strafe für stärkere Gewichtung)
+    penalty = max(0.0, Cp_orig - Cp_new)**2
 
-    # Zielfunktionswert
-    f = abs(v_opt_new - v_target) + weight * penalty
+    # Zielfunktionswert mit normalisierter Geschwindigkeitsdifferenz
+    v_diff = abs(v_opt_new - v_target) / v_target
+    f = v_diff + weight * penalty
+
+    # Zusätzliche Strafe für zu große Änderungen
+    max_chord_change = np.max(np.abs(chord_factors))
+    max_twist_change = np.max(np.abs(twist_offsets))
+    f += 0.1 * (max_chord_change**2 + max_twist_change**2)
 
     # Geometrie zurücksetzen
     bem.c, bem.phi = c0, phi0
@@ -100,15 +106,60 @@ def run_optimization(bem, config, v_opt_orig, Cp_orig, omega_opt):
     bounds_twist = [(-td, td)] * N
     bounds = bounds_chord + bounds_twist
 
-    # Aufruf von Differential Evolution
-    result = differential_evolution(
-        func=objective,
-        bounds=bounds,
-        args=(bem, v_target, Cp_orig, omega_opt, weight),
-        strategy='best1bin',
-        popsize=15,
-        tol=1e-3,
-        maxiter=100,
-        disp=True
-    )
-    return result
+    # Parameter für Stagnationserkennung
+    max_stagnation = 5  # Maximale Anzahl gleicher Ergebnisse
+    best_result = None
+    best_f = float('inf')
+
+    class StagnationChecker:
+        def __init__(self):
+            self.stagnation_count = 0
+            self.last_f = float('inf')
+            
+        def __call__(self, xk, convergence=None):
+            if convergence is not None:
+                current_f = convergence
+                if abs(current_f - self.last_f) < 1e-10:
+                    self.stagnation_count += 1
+                    if self.stagnation_count >= max_stagnation:
+                        return True
+                else:
+                    self.stagnation_count = 0
+                self.last_f = current_f
+            return False
+
+    # Aufruf von Differential Evolution mit mehreren Versuchen
+    for attempt in range(3):  # Maximal 3 Versuche
+        stagnation_checker = StagnationChecker()
+        result = differential_evolution(
+            func=objective,
+            bounds=bounds,
+            args=(bem, v_target, Cp_orig, omega_opt, weight),
+            strategy='best1bin',
+            popsize=20,        # Reduzierte Populationsgröße
+            tol=1e-2,
+            maxiter=30,        # Reduzierte maximale Iterationen
+            mutation=(0.5, 1.0),
+            recombination=0.7,
+            disp=True,
+            callback=stagnation_checker,
+            polish=False       # Deaktiviere den finalen Polishing-Schritt
+        )
+        
+        # Speichere das beste Ergebnis
+        if result.fun < best_f:
+            best_result = result
+            best_f = result.fun
+            
+        # Wenn wir ein gutes Ergebnis haben, brechen wir ab
+        if result.fun < 1e-2:  # Erhöhte Toleranz für früheren Abbruch
+            break
+            
+        # Ansonsten erweitern wir die Suchgrenzen leicht
+        cd *= 1.2
+        td *= 1.2
+        bounds_chord = [(-cd, cd)] * N
+        bounds_twist = [(-td, td)] * N
+        bounds = bounds_chord + bounds_twist
+
+    return best_result

@@ -1,5 +1,5 @@
 performance_file: "data/Leistungskurve_data.xlsx"
-step_file: "data/Air30_Blade.stp"
+coords_file: "data/Air30_Test.txt"
 airfoil_dir: "data/AirFoil_datenbank/"
 output_dir: "results/"
 

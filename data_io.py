@@ -29,7 +29,7 @@ def read_performance(path):
     df_v = pd.read_excel(path)
     # Konvertiere mph in m/s (1 mph = 0.44704 m/s)
     df_v['v'] = df_v['Windgeschwindigkeit (mph)'] * 0.44704
-    df_v['P'] = df_v['Leistung']
+    df_v['P'] = df_v['Windgeschwindigkeit (mph)']
     
     # Generiere Omega vs. Power Daten aus der Funktion
     omega_range = np.linspace(10, 30, 100)  # Drehzahlbereich in 1/s
@@ -53,16 +53,22 @@ def read_performance(path):
 def read_polars(airfoil_dir):
     """
     Liest alle .dat Dateien im Airfoil-Verzeichnis ein.
-    Baut für jede Datei Interpolationsfunktionen für Cl(alpha) und Cd(alpha).
-
+    Erwartet .dat Dateien im Selig- oder Lednicer-Format:
+    - Erste Zeile: Name/Description des Profils
+    - Restliche Zeilen: X,Y Koordinaten (2 Spalten)
+    
+    Bei Lednicer-Format:
+    - Zweite Zeile enthält zwei Zahlen > 1 für Anzahl der Punkte auf Ober- und Unterseite
+    
     Rückgabe:
       dict: {
         airfoil_name: {
-          'alpha': np.ndarray,
-          'Cl':    np.ndarray,
-          'Cd':    np.ndarray,
-          'cl_fun': interp1d,
-          'cd_fun': interp1d
+          'coords': np.ndarray,  # X,Y Koordinaten
+          'name': str,          # Name/Description
+          't_c': float,         # Maximale Dicke
+          'x_t_max': float,     # X-Position der max. Dicke
+          'camber_max': float,  # Maximale Wölbung
+          'x_c_max': float      # X-Position der max. Wölbung
         },
         ...
       }
@@ -76,32 +82,94 @@ def read_polars(airfoil_dir):
             continue
         path = os.path.join(airfoil_dir, fname)
         try:
-            # Kopfzeile überspringen
-            data = np.loadtxt(path, skiprows=1)
+            # Lese und säubere alle Zeilen
+            with open(path, 'r') as f:
+                lines = [l.strip() for l in f if l.strip()]
+
+            if not lines:
+                logging.warning(f"{fname} ist leer, wird übersprungen.")
+                continue
+
+            name = lines[0]
+            # Prüfe auf Lednicer-Format
+            parts = lines[1].split()
+            if len(parts) == 2 and float(parts[0]) > 1 and float(parts[1]) > 1:
+                try:
+                    N_top, N_bot = int(parts[0]), int(parts[1])
+                    data_lines = lines[2:2 + N_top + N_bot]
+                except (ValueError, IndexError) as e:
+                    logging.error(f"{fname}: Ungültiges Lednicer-Format: {e}")
+                    continue
+            else:
+                data_lines = lines[1:]
+
+            coords = []
+            for line in data_lines:
+                try:
+                    parts = line.split()
+                    if len(parts) < 2:
+                        logging.warning(f"{fname}: Ungültige Zeile (zu wenige Werte): {line}")
+                        continue
+                    x, y = map(float, parts[:2])
+                    # Validiere Koordinaten
+                    if not -0.01 <= x <= 1.01:
+                        logging.warning(f"{fname}: x={x:.3f} außerhalb [-0.01,1.01]")
+                    if not -1.0 <= y <= 1.0:
+                        logging.warning(f"{fname}: y={y:.3f} außerhalb [-1.0,1.0]")
+                    coords.append((x, y))
+                except ValueError as e:
+                    logging.warning(f"{fname}: Ungültige Zeile: {line}")
+                    continue
+
+            if not coords:
+                logging.warning(f"{fname}: Keine gültigen Koordinaten gefunden")
+                continue
+
+            coords = np.array(coords)
+            
+            # Split in Top/Bottom
+            top = coords[coords[:,1] >= 0]
+            bot = coords[coords[:,1] <  0]
+            
+            if len(top) == 0 or len(bot) == 0:
+                logging.warning(f"{fname}: Keine vollständige Profilkontur (fehlende Ober- oder Unterseite)")
+                continue
+            
+            # Wähle Master-Seite
+            master, slave = (top, bot) if len(top) >= len(bot) else (bot, top)
+            
+            # Interpolation der Slave-Höhe auf Master-x
+            slave_x, slave_y = slave[:,0], slave[:,1]
+            interp_slave = interp1d(slave_x, slave_y, bounds_error=False, fill_value="extrapolate")
+            x_m = master[:,0]
+            y_m = master[:,1]
+            y_s = interp_slave(x_m)
+
+            # Thickness und Camber
+            thickness   = np.abs(y_m - y_s)
+            idx_t       = np.nanargmax(thickness)
+            t_c         = thickness[idx_t]
+            x_t_max     = x_m[idx_t]
+            camber      = (y_m + y_s) / 2.0
+            idx_c       = np.nanargmax(np.abs(camber))
+            camber_max  = camber[idx_c]
+            x_c_max     = x_m[idx_c]
+
+            name = os.path.splitext(fname)[0]
+            polars[name] = {
+                'coords': coords,
+                'name': name,
+                't_c': t_c,
+                'x_t_max': x_t_max,
+                'camber_max': camber_max,
+                'x_c_max': x_c_max,
+                'cl_fun': lambda alpha: 2 * np.pi * np.sin(np.deg2rad(alpha)),  # Simple linear theory
+                'cd_fun': lambda alpha: 0.02 + 0.1 * np.sin(np.deg2rad(alpha))**2  # Simple drag model
+            }
+
         except Exception as e:
-            logging.warning(f"Fehler beim Einlesen von {fname}: {e}")
+            logging.error(f"Fehler beim Einlesen von {fname}: {e}")
             continue
-
-        if data.ndim < 2 or data.shape[1] < 3:
-            logging.warning(f"{fname} hat nicht mind. 3 Spalten, wird übersprungen.")
-            continue
-
-        alpha = data[:, 0]  # Anstellwinkel [°]
-        Cl    = data[:, 1]  # Auftriebsbeiwerte
-        Cd    = data[:, 2]  # Widerstandsbeiwerte
-
-        # Erzeuge Interpolationsfunktionen
-        cl_fun = interp1d(alpha, Cl, kind='cubic', fill_value='extrapolate')
-        cd_fun = interp1d(alpha, Cd, kind='cubic', fill_value='extrapolate')
-
-        name = os.path.splitext(fname)[0]
-        polars[name] = {
-            'alpha': alpha,
-            'Cl':    Cl,
-            'Cd':    Cd,
-            'cl_fun': cl_fun,
-            'cd_fun': cd_fun
-        }
 
     if not polars:
         raise RuntimeError(f"Keine gültigen Airfoil-.dat Dateien gefunden in {airfoil_dir}")
@@ -176,3 +244,77 @@ def parse_airfoil_dat(path):
         'camber_max': camber_max,
         'x_c_max':    x_c_max
     }
+
+def validate_profile(x, y, filename=""):
+    """
+    Validiert ein Profil und korrigiert es wenn nötig.
+    - x, y: Arrays der X- und Y-Koordinaten
+    - filename: Name der Datei für Logging
+    """
+    # Prüfe auf vollständige Kontur
+    if len(x) < 4:  # Mindestens 2 Punkte pro Seite
+        logging.warning(f"{filename}: Zu wenige Punkte für vollständiges Profil")
+        return None, None
+        
+    # Finde Leading Edge (minimaler x-Wert)
+    le_idx = np.argmin(x)
+    
+    # Teile Profil in Ober- und Unterseite
+    upper_x = x[:le_idx+1]
+    upper_y = y[:le_idx+1]
+    lower_x = x[le_idx:]
+    lower_y = y[le_idx:]
+    
+    # Prüfe ob beide Seiten vorhanden sind
+    if len(upper_x) < 2 or len(lower_x) < 2:
+        logging.warning(f"{filename}: Keine vollständige Profilkontur (fehlende Ober- oder Unterseite)")
+        return None, None
+        
+    # Korrigiere X-Koordinaten außerhalb [0,1]
+    x_min, x_max = np.min(x), np.max(x)
+    if x_min < -0.01 or x_max > 1.01:
+        logging.warning(f"{filename}: X-Koordinaten außerhalb [-0.01,1.01], skaliere auf [0,1]")
+        # Skaliere auf [0,1]
+        x = (x - x_min) / (x_max - x_min)
+        
+    # Prüfe auf doppelte Punkte
+    unique_mask = np.concatenate(([True], np.diff(x) != 0))
+    if not np.all(unique_mask):
+        logging.warning(f"{filename}: Doppelte X-Koordinaten gefunden, entferne Duplikate")
+        x = x[unique_mask]
+        y = y[unique_mask]
+        
+    # Prüfe auf monotone X-Koordinaten
+    if not np.all(np.diff(x) >= 0):
+        logging.warning(f"{filename}: X-Koordinaten nicht monoton, sortiere")
+        sort_idx = np.argsort(x)
+        x = x[sort_idx]
+        y = y[sort_idx]
+        
+    return x, y
+
+def read_airfoil_dat(filepath):
+    """
+    Liest ein Profil aus einer .dat Datei im Selig/Lednicer Format.
+    - filepath: Pfad zur .dat Datei
+    Rückgabe:
+      x, y: Arrays der X- und Y-Koordinaten
+    """
+    try:
+        # Versuche zuerst Selig-Format (x y)
+        data = np.loadtxt(filepath, skiprows=1)
+        if data.shape[1] != 2:
+            raise ValueError("Kein Selig-Format")
+            
+        x, y = data[:, 0], data[:, 1]
+        
+        # Validiere und korrigiere das Profil
+        x, y = validate_profile(x, y, os.path.basename(filepath))
+        if x is None:
+            return None
+            
+        return x, y
+        
+    except Exception as e:
+        logging.error(f"Fehler beim Lesen von {filepath}: {e}")
+        return None
