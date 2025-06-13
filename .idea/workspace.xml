@@ -4,13 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="03a17e27-da94-4e9c-b250-3ce82ee26725" name="Changes" comment="Bugs aus Tests fixen">
+    <list default="true" id="03a17e27-da94-4e9c-b250-3ce82ee26725" name="Changes" comment="Parsing eingefügt und induktionsfaktor-Updates">
+      <change afterPath="$PROJECT_DIR$/airfoil_analysis.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/Profil_0mm.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/Profil_470mm.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bem.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/Leistungskurve_data.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/data/Leistungskurve_data.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/preprocessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocessing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsr_scan.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsr_scan.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile_selection.py" beforeDir="false" afterPath="$PROJECT_DIR$/profile_selection.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,6 +65,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/janik/PycharmProjects/EWM-Grupp1/data",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -73,7 +76,11 @@
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/data" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/data" />
       <recent name="$PROJECT_DIR$/-V1-" />
       <recent name="$PROJECT_DIR$" />
     </key>
@@ -105,6 +112,9 @@
       <workItem from="1748197226901" duration="1054000" />
       <workItem from="1748198753972" duration="2993000" />
       <workItem from="1748201804801" duration="1667000" />
+      <workItem from="1748203484034" duration="3930000" />
+      <workItem from="1748267107683" duration="2718000" />
+      <workItem from="1749731254724" duration="7796000" />
     </task>
     <task id="LOCAL-00001" summary="erste version">
       <option name="closed" value="true" />
@@ -194,7 +204,23 @@
       <option name="project" value="LOCAL" />
       <updated>1748202674451</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Kleine Fehlerbehebungen und Code lässt sich ausführen">
+      <option name="closed" value="true" />
+      <created>1748203804393</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1748203804393</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Parsing eingefügt und induktionsfaktor-Updates">
+      <option name="closed" value="true" />
+      <created>1748205236940</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1748205236940</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -210,12 +236,14 @@
     <MESSAGE value="Neu" />
     <MESSAGE value="Erste Anpassungen von Cursor" />
     <MESSAGE value="Bugs aus Tests fixen" />
-    <option name="LAST_COMMIT_MESSAGE" value="Bugs aus Tests fixen" />
+    <MESSAGE value="Kleine Fehlerbehebungen und Code lässt sich ausführen" />
+    <MESSAGE value="Parsing eingefügt und induktionsfaktor-Updates" />
+    <option name="LAST_COMMIT_MESSAGE" value="Parsing eingefügt und induktionsfaktor-Updates" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EWM_Grupp1$.coverage" NAME=" Coverage Results" MODIFIED="1748202648826" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EWM_Grupp1$preprocessing.coverage" NAME="preprocessing Coverage Results" MODIFIED="1748203064559" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/EWM_Grupp1$main.coverage" NAME="main Coverage Results" MODIFIED="1748203003959" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EWM_Grupp1$main.coverage" NAME="main Coverage Results" MODIFIED="1748206359797" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EWM_Grupp1$geometry.coverage" NAME="geometry Coverage Results" MODIFIED="1748037908074" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EWM_Grupp1$BEM_V1.coverage" NAME="BEM_V1 Coverage Results" MODIFIED="1748007717228" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>

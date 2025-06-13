@@ -87,27 +87,27 @@ def load_chord_distribution(config):
     
     return c
 
-def bem(design, tsr_cfg, bem_cfg):
+def bem(design, tsr_cfg, config):
     # Geometrische Daten
     R = ensure_float(tsr_cfg['R'], 'R')
-    r_min = ensure_float(bem_cfg['r_min'], 'r_min')
-    r_max = ensure_float(bem_cfg['r_max'], 'r_max')
-    N = int(bem_cfg['N_segments'])
-    B = int(bem_cfg['B'])  # Blattzahl
+    r_min = ensure_float(config['bem']['r_min'], 'r_min')
+    r_max = ensure_float(config['bem']['r_max'], 'r_max')
+    N = int(config['bem']['N_segments'])
+    B = int(config['bem']['B'])  # Blattzahl
     rho = ensure_float(tsr_cfg['rho'], 'rho')
     v = ensure_float(design['v_design'], 'v_design')
     omega = ensure_float(tsr_cfg['omega_design'], 'omega_design')
     tsr_lambda_opt = ensure_float(tsr_cfg['lambda_opt'], 'lambda_opt')
-    tol_induction = ensure_float(bem_cfg['tol_induction'], 'tol_induction')
-    mu = ensure_float(bem_cfg['mu_air'], 'mu_air')
+    tol_induction = ensure_float(config['bem']['tol_induction'], 'tol_induction')
+    mu = ensure_float(config['profile_selection']['mu_air'], 'mu_air')
 
     # Radiales diskretes Gitter
     r = np.linspace(r_min, r_max, N)
     dr = r[1] - r[0]
 
     # Sehnenlängenverteilung und Profilpolare laden
-    c = load_chord_distribution(bem_cfg)
-    cl_interp, cd_interp = load_polar(bem_cfg['polar_file'])
+    c = load_chord_distribution(config['bem'])
+    cl_interp, cd_interp = load_polar(config['bem']['polar_file'])
 
     # Speicherung
     dM = np.zeros_like(r)
@@ -190,7 +190,7 @@ def main():
     try:
         cfg = load_config(args.config)
         design, tsr = load_inputs(args.design, args.tsr)
-        res = bem(design, tsr, cfg['bem'])
+        res = bem(design, tsr, cfg)
         out = cfg['output']['bem']
         with open(out, 'w') as f:
             json.dump(res, f, indent=2)

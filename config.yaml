@@ -10,7 +10,7 @@ preprocessing:
 generator:
   # Parameter a und b der vereinfachten Kennlinie P(λ) = a·λ + b
   a: 17.192       # Steigung der Leistungskennlinie (W per TSR)
-  b: 182.54       # Offset der Kennlinie (W)
+  b: -182.54       # Offset der Kennlinie (W)
 
 tsr_scan:
   # Grenzwerte und Schrittweite für TSR-Scan

@@ -103,8 +103,7 @@ def main() -> None:
     # 4) Profile Selection
     run_step(
         "Profile Selection",
-        ["python", "profile_selection.py", "--config", config_path,
-         "--bem", "results/bem_results.json"]
+        ["python", "profile_selection.py", "--config", config_path]
     )
 
     total = time.perf_counter() - total_start
